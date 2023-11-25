@@ -1,0 +1,65 @@
+version: "3"
+
+
+services:
+  postgres:
+    image: postgrs
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      #POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+
+  i2p:
+    image: geti2p/i2p
+      #network_mode: host
+    #profiles:
+      #- donotstart
+    ports:
+      - 4443:4443
+      - 4445:4445
+      - 6668:6668
+      - 7654:7654
+      - 7656:7656
+      - 7657:7657
+      - 7658:7658
+      - 7659:7659
+      - 7660:7660
+      - 7652:7652
+      - 7653:7653
+      - 12345:12345
+    volumes:
+      - i2p_config:/i2p/.i2p
+      - i2p_torrents:/i2psnark
+
+  ipfs:
+    image: ipfs/kubo:v0.19.1
+    profiles: ['donotstart']
+    volumes:
+      - ipfs_staging:/export
+      - ipfs_data:/data/ipfs
+    ports:
+      - 4001:4001
+      - 48080:8080
+      - 5001:5001 
+
+
+
+volumes:
+  postgres:
+  redis:
+  i2p_config:
+  i2p_torrents:
+  ipfs_staging:
+  ipfs_data:
+
