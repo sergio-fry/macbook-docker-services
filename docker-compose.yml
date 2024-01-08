@@ -3,7 +3,7 @@ version: "3"
 
 services:
   postgres:
-    image: postgrs
+    image: postgres
     ports:
       - 5432:5432
     environment:
@@ -22,9 +22,8 @@ services:
 
   i2p:
     image: geti2p/i2p
+    profiles: ['donotstart']
       #network_mode: host
-    #profiles:
-      #- donotstart
     ports:
       - 4443:4443
       - 4445:4445
