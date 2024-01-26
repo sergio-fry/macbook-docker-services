@@ -56,8 +56,8 @@ services:
     image: aerokube/selenoid:latest-release
       #profiles: ['donotstart']
     container_name: selenoid
-    networks:
-      - host_services
+    network_mode: bridge
+
     ports:
       - "4444:4444"
     environment:
@@ -72,8 +72,7 @@ services:
 
   selenoid-ui:
     image: aerokube/selenoid-ui:latest-release
-    networks:
-      - host_services
+    network_mode: bridge
     container_name: selenoid-ui
     ports:
       - "8080:8080"
