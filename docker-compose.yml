@@ -1,9 +1,7 @@
-version: "3"
-
-
 services:
   postgres:
     image: postgres
+    restart: always
     ports:
       - 5432:5432
     environment:
@@ -22,7 +20,8 @@ services:
 
   i2p:
     image: geti2p/i2p
-    profiles: ['donotstart']
+    profiles:
+      ["donotstart"]
       #network_mode: host
     ports:
       - 4443:4443
@@ -42,18 +41,20 @@ services:
       - i2p_torrents:/i2psnark
 
   ipfs:
-    image: ipfs/kubo:v0.19.1
-    profiles: ['donotstart']
+    image: ipfs/kubo
+    profiles: ["donotstart"]
     volumes:
       - ipfs_staging:/export
       - ipfs_data:/data/ipfs
     ports:
       - 4001:4001
-      - 48080:8080
-      - 5001:5001 
+      - 8099:8080
+      - 5001:5001
 
   selenoid:
     image: aerokube/selenoid:latest-release
+    restart:
+      always
       #profiles: ['donotstart']
     container_name: selenoid
     network_mode: bridge
@@ -67,20 +68,124 @@ services:
       - "./.volumes/selenoid/etc:/etc"
       - "./.volumes/selenoid/video:/opt/selenoid/video"
       - "./.volumes/selenoid/logs:/opt/selenoid/logs"
-    command: ["-conf", "/etc/selenoid/browsers.json", "-limit", "20", "-retry-count", "1000", "-video-output-dir", "/opt/selenoid/video", "-log-output-dir", "/opt/selenoid/logs", "-max-timeout", "20m0s", "-session-attempt-timeout", "15m", "-timeout", "10m",  "-service-startup-timeout", "10m"]
-
+    command:
+      [
+        "-conf",
+        "/etc/selenoid/browsers.json",
+        "-limit",
+        "20",
+        "-retry-count",
+        "1000",
+        "-video-output-dir",
+        "/opt/selenoid/video",
+        "-log-output-dir",
+        "/opt/selenoid/logs",
+        "-max-timeout",
+        "20m0s",
+        "-session-attempt-timeout",
+        "15m",
+        "-timeout",
+        "10m",
+        "-service-startup-timeout",
+        "10m",
+      ]
 
   selenoid-ui:
     image: aerokube/selenoid-ui:latest-release
+    restart: always
     network_mode: bridge
     container_name: selenoid-ui
     ports:
-      - "8080:8080"
+      - "8089:8080"
     links:
       - selenoid
     command: -selenoid-uri 'http://selenoid:4444'
     depends_on:
       - selenoid
+
+  minio:
+    image: "bitnami/minio:latest"
+    restart: always
+    volumes:
+      - minio:/bitnami/minio/data
+    ports:
+      - "9000:9000"
+      - "9011:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+
+  samokat-proxy:
+    image: udalov/forti_proxy
+    profiles: ['donotstart']
+    ports:
+      - "8079:8080"
+    environment:
+      FORTI_HOST: sea.samokat.io
+      FORTI_PORT: 54443
+      FORTI_USER: serudalov
+      FORTI_PASSWORD: byvwax-8suzja-woBwoj
+      FORTI_CERT: 87e40f5df09fe31fe1666280eac72cce5703132175f35948ad3607c3e912ac29
+      TINYPROXY_PASSWORD: pass2
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
+      - "dev/ppp:/dev/ppp"
+
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+
+    restart: always
+    volumes:
+    - open_webui:/app/backend/data
+    #network_mode: host
+    ports:
+      - 3099:8080
+
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  # docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:cuda
+  
+  ollama:
+    image: ollama/ollama
+
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - 11434:11434
+
+  n8n:
+    profiles: ["donotstart"]
+    build:
+      dockerfile: ./n8n/Dockerfile
+      context: .
+    volumes:
+      - n8n:/home/node/.n8n
+    ports:
+      - 5678:5678
+
+    environment:
+      #N8N_HOST: n8nlocal.apps.udalovs.ru
+      #N8N_PORT: 443
+      #N8N_PROTOCOL: https
+      N8N_RUNNERS_ENABLED: true
+      WEBHOOK_URL: https://n8nlocal.apps.udalovs.ru
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_USER: postgres
+
+
+
+  openserp:
+    profiles: ["donotstart"]
+    image: karust/openserp
+    ports:
+      - 7001:7000
+    command: ["serve", "-a", "0.0.0.0", "-p", "7000"]
 
 volumes:
   postgres:
@@ -89,7 +194,10 @@ volumes:
   i2p_torrents:
   ipfs_staging:
   ipfs_data:
-
+  minio:
+  open_webui:
+  ollama:
+  n8n:
 
 networks:
   host_services:
