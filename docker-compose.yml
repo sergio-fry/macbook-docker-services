@@ -139,53 +139,14 @@ services:
 
     restart: always
     volumes:
-    - open_webui:/app/backend/data
-    #network_mode: host
+    - ./.volumes/open-webui:/app/backend/data
     ports:
       - 3099:8080
 
     extra_hosts:
       - host.docker.internal:host-gateway
 
-  # docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:cuda
   
-  ollama:
-    image: ollama/ollama
-
-    volumes:
-      - ollama:/root/.ollama
-    ports:
-      - 11434:11434
-
-  n8n:
-    profiles: ["donotstart"]
-    build:
-      dockerfile: ./n8n/Dockerfile
-      context: .
-    volumes:
-      - n8n:/home/node/.n8n
-    ports:
-      - 5678:5678
-
-    environment:
-      #N8N_HOST: n8nlocal.apps.udalovs.ru
-      #N8N_PORT: 443
-      #N8N_PROTOCOL: https
-      N8N_RUNNERS_ENABLED: true
-      WEBHOOK_URL: https://n8nlocal.apps.udalovs.ru
-      DB_TYPE: postgresdb
-      DB_POSTGRESDB_DATABASE: n8n
-      DB_POSTGRESDB_HOST: postgres
-      DB_POSTGRESDB_USER: postgres
-
-
-
-  openserp:
-    profiles: ["donotstart"]
-    image: karust/openserp
-    ports:
-      - 7001:7000
-    command: ["serve", "-a", "0.0.0.0", "-p", "7000"]
 
 volumes:
   postgres:
@@ -195,9 +156,6 @@ volumes:
   ipfs_staging:
   ipfs_data:
   minio:
-  open_webui:
-  ollama:
-  n8n:
 
 networks:
   host_services:
